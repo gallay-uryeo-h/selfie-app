@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { 
   X, Settings, ImagePlus, Sparkles, Trash2, Upload, Check, 
-  Palette, Sliders, Info, PlusCircle, RefreshCw, Layers, FileImage
+  Palette, Sliders, Info, PlusCircle, RefreshCw, Layers, FileImage, Sun, Moon
 } from 'lucide-react';
 import { 
   processStickerImageFile, saveCustomSticker, deleteCustomSticker, 
@@ -243,7 +243,7 @@ export default function SettingsModal({
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(255, 255, 255, 0.08)',
+              background: 'rgba(128, 128, 128, 0.15)',
               border: 'none',
               borderRadius: '50%',
               width: '34px',
@@ -251,7 +251,7 @@ export default function SettingsModal({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
             }}
@@ -798,9 +798,57 @@ export default function SettingsModal({
             </div>
           )}
 
-          {/* TAB 2: 촬영 & 타이머 설정 */}
+          {/* TAB 2: 화면 테마 & 키오스크 설정 */}
           {activeTab === 'general' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Theme Mode Switcher */}
+              <div style={{
+                padding: '16px',
+                borderRadius: '14px',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>🎨</span>
+                    <span>화면 테마 모드 전환</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    화사하고 밝은 라이트 모드 또는 집중도 높은 다크 모드로 변경합니다.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playPop();
+                      setAppSettings(prev => ({ ...prev, theme: 'dark' }));
+                    }}
+                    className={appSettings.theme !== 'light' ? 'btn btn-primary' : 'btn btn-secondary'}
+                    style={{ padding: '8px 16px', fontSize: '13px', gap: '6px' }}
+                  >
+                    <Moon size={14} />
+                    <span>다크 모드</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playPop();
+                      setAppSettings(prev => ({ ...prev, theme: 'light' }));
+                    }}
+                    className={appSettings.theme === 'light' ? 'btn btn-primary' : 'btn btn-secondary'}
+                    style={{ padding: '8px 16px', fontSize: '13px', gap: '6px' }}
+                  >
+                    <Sun size={14} />
+                    <span>라이트 모드</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Countdown duration */}
               <div style={{
                 padding: '16px',

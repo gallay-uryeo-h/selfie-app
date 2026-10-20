@@ -113,7 +113,7 @@ export default function LandingScreen({ onStart, onOpenSettings }) {
       </div>
 
       {/* Main Title */}
-      <h1 style={{
+      <h1 className="hero-title-gradient" style={{
         fontSize: 'clamp(38px, 5vw, 58px)',
         fontWeight: 900,
         fontFamily: 'var(--font-display)',

@@ -60,6 +60,19 @@ export default function App() {
     });
   };
 
+  const currentTheme = appSettings.theme || 'dark';
+
+  // Apply theme to HTML root element
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', currentTheme);
+  }, [currentTheme]);
+
+  const handleToggleTheme = () => {
+    sound.playPop();
+    const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+    handleUpdateAppSettings(prev => ({ ...prev, theme: nextTheme }));
+  };
+
   const handleToggleSound = () => {
     const next = !soundMuted;
     setSoundMuted(next);
@@ -89,6 +102,8 @@ export default function App() {
           onReset={handleReset}
           soundMuted={soundMuted}
           onToggleSound={handleToggleSound}
+          theme={currentTheme}
+          onToggleTheme={handleToggleTheme}
           onOpenSettings={() => setIsSettingsOpen(true)}
         />
       )}

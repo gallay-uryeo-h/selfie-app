@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, RotateCcw, Maximize2, Minimize2, Sparkles, Camera, Palette, Printer, Settings } from 'lucide-react';
+import { Volume2, VolumeX, RotateCcw, Maximize2, Minimize2, Sparkles, Camera, Palette, Printer, Settings, Sun, Moon } from 'lucide-react';
 import { sound } from '../utils/soundEffects';
 
-export default function Header({ currentStep, onReset, soundMuted, onToggleSound, onOpenSettings }) {
+export default function Header({ currentStep, onReset, soundMuted, onToggleSound, onOpenSettings, theme = 'dark', onToggleTheme }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
@@ -40,7 +40,7 @@ export default function Header({ currentStep, onReset, soundMuted, onToggleSound
           📸
         </div>
         <div>
-          <h1 style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.3px', background: 'linear-gradient(90deg, #ffffff 0%, #cbd5e1 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <h1 className="header-title-gradient" style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.3px', background: 'linear-gradient(90deg, #ffffff 0%, #cbd5e1 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Find Your English Spectrum!
           </h1>
           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
@@ -112,6 +112,15 @@ export default function Header({ currentStep, onReset, soundMuted, onToggleSound
         >
           <Settings size={17} color="#ec4899" />
           <span style={{ fontSize: '13px', fontWeight: 600 }}>설정</span>
+        </button>
+
+        <button
+          onClick={onToggleTheme}
+          title={theme === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환'}
+          className="btn btn-secondary"
+          style={{ padding: '8px 12px', borderRadius: '10px' }}
+        >
+          {theme === 'light' ? <Moon size={18} color="#6366f1" /> : <Sun size={18} color="#f59e0b" />}
         </button>
 
         <button
