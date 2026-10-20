@@ -34,16 +34,28 @@ export default function App() {
   const [appSettings, setAppSettings] = useState(() => {
     try {
       const saved = localStorage.getItem('photobooth_app_settings');
-      return saved ? JSON.parse(saved) : {
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          countdownSeconds: 3,
+          stickerTimeLimit: 90,
+          soundEnabled: true,
+          theme: 'light',
+          ...parsed,
+        };
+      }
+      return {
         countdownSeconds: 3,
         stickerTimeLimit: 90,
         soundEnabled: true,
+        theme: 'light',
       };
     } catch {
       return {
         countdownSeconds: 3,
         stickerTimeLimit: 90,
         soundEnabled: true,
+        theme: 'light',
       };
     }
   });
@@ -60,7 +72,7 @@ export default function App() {
     });
   };
 
-  const currentTheme = appSettings.theme || 'dark';
+  const currentTheme = appSettings.theme || 'light';
 
   // Apply theme to HTML root element
   React.useEffect(() => {

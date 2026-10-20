@@ -826,25 +826,25 @@ export default function SettingsModal({
                     type="button"
                     onClick={() => {
                       sound.playPop();
-                      setAppSettings(prev => ({ ...prev, theme: 'dark' }));
+                      setAppSettings(prev => ({ ...prev, theme: 'light' }));
                     }}
-                    className={appSettings.theme !== 'light' ? 'btn btn-primary' : 'btn btn-secondary'}
+                    className={appSettings.theme !== 'dark' ? 'btn btn-primary' : 'btn btn-secondary'}
                     style={{ padding: '8px 16px', fontSize: '13px', gap: '6px' }}
                   >
-                    <Moon size={14} />
-                    <span>다크 모드</span>
+                    <Sun size={14} />
+                    <span>라이트 모드 (기본)</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       sound.playPop();
-                      setAppSettings(prev => ({ ...prev, theme: 'light' }));
+                      setAppSettings(prev => ({ ...prev, theme: 'dark' }));
                     }}
-                    className={appSettings.theme === 'light' ? 'btn btn-primary' : 'btn btn-secondary'}
+                    className={appSettings.theme === 'dark' ? 'btn btn-primary' : 'btn btn-secondary'}
                     style={{ padding: '8px 16px', fontSize: '13px', gap: '6px' }}
                   >
-                    <Sun size={14} />
-                    <span>라이트 모드</span>
+                    <Moon size={14} />
+                    <span>다크 모드</span>
                   </button>
                 </div>
               </div>
