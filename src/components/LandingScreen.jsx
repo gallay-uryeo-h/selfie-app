@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Camera, ChevronRight, Star } from 'lucide-react';
+import { Sparkles, Camera, ChevronRight, Star, Settings } from 'lucide-react';
 import { sound } from '../utils/soundEffects';
 
 const ATTRACT_MESSAGES = [
@@ -10,7 +10,7 @@ const ATTRACT_MESSAGES = [
   '사진 출력까지 단 3분이면 완성! 🖨️',
 ];
 
-export default function LandingScreen({ onStart }) {
+export default function LandingScreen({ onStart, onOpenSettings }) {
   const [msgIdx, setMsgIdx] = useState(0);
   const [visible, setVisible] = useState(true);
   const [bgAnimated, setBgAnimated] = useState(false);
@@ -51,6 +51,30 @@ export default function LandingScreen({ onStart }) {
         overflow: 'hidden',
       }}
     >
+      {/* Top Right Settings Button */}
+      <div style={{ position: 'absolute', top: '24px', right: '28px', zIndex: 60 }}>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            sound.playPop();
+            onOpenSettings && onOpenSettings();
+          }}
+          className="btn btn-secondary"
+          style={{
+            padding: '10px 16px',
+            borderRadius: '12px',
+            gap: '8px',
+            background: 'rgba(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+          }}
+          title="포토부스 설정 (외부 스티커 등록 & 옵션)"
+        >
+          <Settings size={16} color="#ec4899" />
+          <span style={{ fontSize: '13px', fontWeight: 700 }}>설정</span>
+        </button>
+      </div>
       {/* Ambient background glows */}
       <div style={{ position: 'absolute', top: '-160px', left: '-160px', width: '560px', height: '560px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: '-160px', right: '-160px', width: '560px', height: '560px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.2) 0%, transparent 70%)', pointerEvents: 'none' }} />

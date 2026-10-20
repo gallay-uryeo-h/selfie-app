@@ -5,10 +5,12 @@ import Step1FrameSelect from './components/Step1FrameSelect';
 import Step2CameraCapture from './components/Step2CameraCapture';
 import Step3StickerEditor from './components/Step3StickerEditor';
 import Step4PrintExport from './components/Step4PrintExport';
+import SettingsModal from './components/SettingsModal';
 import './App.css';
 
 import { FRAME_THEMES, FRAME_COLORS, FRAME_LAYOUTS } from './constants/frames';
 import { sound } from './utils/soundEffects';
+import { getCustomStickers } from './utils/customStickers';
 
 export default function App() {
   // step 0 = landing, 1–4 = photobooth steps
@@ -25,6 +27,38 @@ export default function App() {
 
   // Step 3: placed stickers
   const [stickers, setStickers] = useState([]);
+
+  // Settings & Custom Stickers state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [customStickers, setCustomStickers] = useState(() => getCustomStickers());
+  const [appSettings, setAppSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('photobooth_app_settings');
+      return saved ? JSON.parse(saved) : {
+        countdownSeconds: 3,
+        stickerTimeLimit: 90,
+        soundEnabled: true,
+      };
+    } catch {
+      return {
+        countdownSeconds: 3,
+        stickerTimeLimit: 90,
+        soundEnabled: true,
+      };
+    }
+  });
+
+  const handleUpdateAppSettings = (updater) => {
+    setAppSettings(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try {
+        localStorage.setItem('photobooth_app_settings', JSON.stringify(next));
+      } catch (e) {
+        console.error(e);
+      }
+      return next;
+    });
+  };
 
   const handleToggleSound = () => {
     const next = !soundMuted;
@@ -55,13 +89,17 @@ export default function App() {
           onReset={handleReset}
           soundMuted={soundMuted}
           onToggleSound={handleToggleSound}
+          onOpenSettings={() => setIsSettingsOpen(true)}
         />
       )}
 
       {/* Main Content */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {currentStep === 0 && (
-          <LandingScreen onStart={() => goToStep(1)} />
+          <LandingScreen
+            onStart={() => goToStep(1)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+          />
         )}
 
         {currentStep === 1 && (
@@ -80,6 +118,7 @@ export default function App() {
           <Step2CameraCapture
             capturedPhotos={capturedPhotos}
             setCapturedPhotos={setCapturedPhotos}
+            appSettings={appSettings}
             onNext={() => goToStep(3)}
             onPrev={() => goToStep(1)}
           />
@@ -93,6 +132,9 @@ export default function App() {
             selectedLayout={selectedLayout}
             stickers={stickers}
             setStickers={setStickers}
+            customStickers={customStickers}
+            appSettings={appSettings}
+            onOpenSettings={() => setIsSettingsOpen(true)}
             onNext={() => goToStep(4)}
             onPrev={() => goToStep(2)}
           />
@@ -109,6 +151,16 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Global Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        customStickers={customStickers}
+        setCustomStickers={setCustomStickers}
+        appSettings={appSettings}
+        setAppSettings={handleUpdateAppSettings}
+      />
 
       {/* Footer */}
       {!isLanding && (

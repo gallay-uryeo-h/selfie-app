@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, RotateCcw, Maximize2, Minimize2, Sparkles, Camera, Palette, Printer } from 'lucide-react';
+import { Volume2, VolumeX, RotateCcw, Maximize2, Minimize2, Sparkles, Camera, Palette, Printer, Settings } from 'lucide-react';
 import { sound } from '../utils/soundEffects';
 
-export default function Header({ currentStep, onReset, soundMuted, onToggleSound }) {
+export default function Header({ currentStep, onReset, soundMuted, onToggleSound, onOpenSettings }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
@@ -101,6 +101,19 @@ export default function Header({ currentStep, onReset, soundMuted, onToggleSound
 
       {/* Utility Actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button
+          onClick={() => {
+            sound.playPop();
+            onOpenSettings && onOpenSettings();
+          }}
+          title="스티커 디자인 및 키오스크 설정"
+          className="btn btn-secondary"
+          style={{ padding: '8px 12px', borderRadius: '10px', gap: '6px' }}
+        >
+          <Settings size={17} color="#ec4899" />
+          <span style={{ fontSize: '13px', fontWeight: 600 }}>설정</span>
+        </button>
+
         <button
           onClick={onToggleSound}
           title={soundMuted ? '소리 켜기' : '소리 끄기'}

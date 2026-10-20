@@ -293,6 +293,17 @@ input[type="text"]::placeholder {
   margin: 0;
 }
 
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* ─── Sticker canvas cursor states ──────────────────────── */
 .sticker-dragging {
   cursor: grabbing !important;

@@ -6,7 +6,7 @@ import { generateSamplePhoto } from '../utils/samplePhotos';
 const TOTAL_SHOTS = 6;
 const COUNTDOWN_SECONDS = 3;
 
-export default function Step2CameraCapture({ capturedPhotos, setCapturedPhotos, onNext, onPrev }) {
+export default function Step2CameraCapture({ capturedPhotos, setCapturedPhotos, onNext, onPrev, appSettings = {} }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
@@ -20,6 +20,8 @@ export default function Step2CameraCapture({ capturedPhotos, setCapturedPhotos, 
   const [allPhotos, setAllPhotos] = useState([]);
   const [showFlash, setShowFlash] = useState(false);
   const [sessionDone, setSessionDone] = useState(false);
+
+  const countdownSeconds = appSettings.countdownSeconds || COUNTDOWN_SECONDS;
 
   // ── Camera init ──────────────────────────────────────────
   useEffect(() => {
@@ -94,7 +96,7 @@ export default function Step2CameraCapture({ capturedPhotos, setCapturedPhotos, 
       }
 
       setCurrentShotIdx(idx);
-      let t = COUNTDOWN_SECONDS;
+      let t = countdownSeconds;
       setCountdown(t);
       sound.playTick();
 

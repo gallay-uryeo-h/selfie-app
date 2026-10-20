@@ -3,7 +3,8 @@ import { STICKER_CATEGORIES, STICKER_DATA } from '../constants/stickers';
 import { sound } from '../utils/soundEffects';
 import { 
   Trash2, ArrowUp, ArrowDown, Type, Sparkles, Clock, 
-  RotateCw, RotateCcw, ZoomIn, ZoomOut, ArrowRight, ArrowLeft, RefreshCw
+  RotateCw, RotateCcw, ZoomIn, ZoomOut, ArrowRight, ArrowLeft, RefreshCw,
+  ImagePlus, Settings
 } from 'lucide-react';
 
 export default function Step3StickerEditor({
@@ -13,13 +14,19 @@ export default function Step3StickerEditor({
   selectedLayout,
   stickers,
   setStickers,
+  customStickers = [],
+  appSettings = {},
+  onOpenSettings,
   onNext,
   onPrev,
 }) {
   const [activeCategory, setActiveCategory] = useState('deco'); // 데코/소품 누끼 스티커 기본 표시
   const [selectedStickerId, setSelectedStickerId] = useState(null);
   const [customText, setCustomText] = useState('');
-  const [timeLeft, setTimeLeft] = useState(90); // 90초 제한시간 타이머
+  
+  const initialTimeLimit = appSettings.stickerTimeLimit !== undefined ? appSettings.stickerTimeLimit : 90;
+  const isUnlimited = initialTimeLimit === 0;
+  const [timeLeft, setTimeLeft] = useState(initialTimeLimit);
 
   // Use a ref so the timer closure always has the latest onNext
   const onNextRef = useRef(onNext);
@@ -30,8 +37,9 @@ export default function Step3StickerEditor({
   const isTransformingRef = useRef(null); // 'rotate' | 'scale'
   const dragStartRef = useRef({ x: 0, y: 0, stickerX: 0, stickerY: 0, scale: 1, rotation: 0, initialAngle: 0, initialDist: 1 });
 
-  // 90초 제한시간 카운트다운
+  // 제한시간 카운트다운 (0인 경우 무제한)
   useEffect(() => {
+    if (isUnlimited) return;
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -47,7 +55,7 @@ export default function Step3StickerEditor({
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, []); // intentionally empty — uses onNextRef
+  }, [isUnlimited]);
 
   // 스티커 추가 (적정 기본 크기로 사진을 가리지 않게 배치)
   const handleAddSticker = (item) => {
@@ -325,21 +333,21 @@ export default function Step3StickerEditor({
           </p>
         </div>
 
-        {/* 90s Countdown Badge */}
+        {/* Countdown Badge */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           padding: '8px 18px',
           borderRadius: '24px',
-          background: timeLeft <= 15 ? 'rgba(239, 68, 68, 0.25)' : 'rgba(99, 102, 241, 0.15)',
-          border: timeLeft <= 15 ? '1px solid #ef4444' : '1px solid rgba(99, 102, 241, 0.3)',
-          color: timeLeft <= 15 ? '#fca5a5' : '#c7d2fe',
+          background: isUnlimited ? 'rgba(16, 185, 129, 0.15)' : timeLeft <= 15 ? 'rgba(239, 68, 68, 0.25)' : 'rgba(99, 102, 241, 0.15)',
+          border: isUnlimited ? '1px solid rgba(16, 185, 129, 0.3)' : timeLeft <= 15 ? '1px solid #ef4444' : '1px solid rgba(99, 102, 241, 0.3)',
+          color: isUnlimited ? '#6ee7b7' : timeLeft <= 15 ? '#fca5a5' : '#c7d2fe',
           fontWeight: 700,
           fontSize: '14px'
         }}>
-          <Clock size={16} color={timeLeft <= 15 ? '#ef4444' : '#818cf8'} />
-          <span>남은 시간: {timeLeft}초</span>
+          <Clock size={16} color={isUnlimited ? '#10b981' : timeLeft <= 15 ? '#ef4444' : '#818cf8'} />
+          <span>{isUnlimited ? '남은 시간: 무제한 ♾️' : `남은 시간: ${timeLeft}초`}</span>
         </div>
       </div>
 
@@ -688,74 +696,155 @@ export default function Step3StickerEditor({
             </form>
           </div>
 
-          {/* Category Tabs */}
-          <div className="glass-panel" style={{ padding: '16px' }}>
-            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
-              {STICKER_CATEGORIES.map((cat) => {
-                const isActive = activeCategory === cat.id;
-                return (
+          {/* Category Tabs & Sticker Palette */}
+          {(() => {
+            const allCategories = [
+              ...STICKER_CATEGORIES,
+              { id: 'custom', label: `내가 등록한 스티커 🌟 (${customStickers.length})` },
+            ];
+            const combinedStickers = [...customStickers, ...STICKER_DATA];
+            const displayedStickers = activeCategory === 'custom'
+              ? customStickers
+              : combinedStickers.filter(s => s.category === activeCategory);
+
+            return (
+              <div className="glass-panel" style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', alignItems: 'center' }}>
+                  {allCategories.map((cat) => {
+                    const isActive = activeCategory === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => {
+                          sound.playPop();
+                          setActiveCategory(cat.id);
+                        }}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '10px',
+                          background: isActive ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' : 'rgba(255, 255, 255, 0.05)',
+                          border: isActive ? '1px solid #818cf8' : '1px solid rgba(255, 255, 255, 0.08)',
+                          color: isActive ? '#fff' : 'var(--text-secondary)',
+                          fontWeight: 700,
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        {cat.label}
+                      </button>
+                    );
+                  })}
+
+                  {/* Open Settings Modal Shortcut */}
                   <button
-                    key={cat.id}
                     onClick={() => {
                       sound.playPop();
-                      setActiveCategory(cat.id);
+                      onOpenSettings && onOpenSettings();
                     }}
+                    className="btn btn-secondary"
                     style={{
-                      padding: '8px 16px',
+                      padding: '7px 14px',
                       borderRadius: '10px',
-                      background: isActive ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' : 'rgba(255, 255, 255, 0.05)',
-                      border: isActive ? '1px solid #818cf8' : '1px solid rgba(255, 255, 255, 0.08)',
-                      color: isActive ? '#fff' : 'var(--text-secondary)',
-                      fontWeight: 700,
-                      fontSize: '13px',
-                      cursor: 'pointer',
+                      gap: '6px',
+                      fontSize: '12px',
+                      color: '#f472b6',
+                      border: '1px solid rgba(236, 72, 153, 0.35)',
+                      background: 'rgba(236, 72, 153, 0.1)',
                       whiteSpace: 'nowrap',
-                      transition: 'all 0.2s ease',
+                      marginLeft: 'auto',
                     }}
+                    title="외부 스티커 등록 및 스티커 디자인 설정 열기"
                   >
-                    {cat.label}
+                    <ImagePlus size={14} color="#ec4899" />
+                    <span>+ 외부 스티커 등록</span>
                   </button>
-                );
-              })}
-            </div>
-
-            {/* Sticker Grid Items */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '12px',
-              maxHeight: '340px',
-              overflowY: 'auto',
-              padding: '12px 4px',
-            }}>
-              {STICKER_DATA.filter(s => s.category === activeCategory).map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => handleAddSticker(item)}
-                  style={{
-                    padding: '12px',
-                    borderRadius: '12px',
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    minHeight: '85px',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'}
-                >
-                  <img src={item.src} alt={item.name} style={{ width: '85px', height: 'auto', display: 'block', maxHeight: '50px', objectFit: 'contain' }} />
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '8px', fontWeight: 600, textAlign: 'center' }}>
-                    {item.name}
-                  </span>
                 </div>
-              ))}
-            </div>
-          </div>
+
+                {/* Sticker Grid Items */}
+                {displayedStickers.length === 0 ? (
+                  <div style={{
+                    padding: '36px 16px',
+                    textAlign: 'center',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px dashed rgba(255, 255, 255, 0.15)',
+                    margin: '12px 4px',
+                  }}>
+                    <div style={{ fontSize: '30px', marginBottom: '8px' }}>🎨</div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '6px' }}>
+                      등록된 외부 스티커가 없습니다
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
+                      [+ 외부 스티커 등록] 버튼을 눌러 PNG/SVG 이미지나 직접 디자인한 스티커를 추가해보세요!
+                    </p>
+                    <button
+                      onClick={() => onOpenSettings && onOpenSettings()}
+                      className="btn btn-primary"
+                      style={{ padding: '8px 16px', fontSize: '12px' }}
+                    >
+                      <ImagePlus size={14} />
+                      <span>스티커 등록 창 열기</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '12px',
+                    maxHeight: '340px',
+                    overflowY: 'auto',
+                    padding: '12px 4px',
+                  }}>
+                    {displayedStickers.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleAddSticker(item)}
+                        style={{
+                          padding: '12px',
+                          borderRadius: '12px',
+                          background: 'rgba(255, 255, 255, 0.04)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          minHeight: '85px',
+                          position: 'relative',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'}
+                      >
+                        {item.isExternal && (
+                          <span style={{
+                            position: 'absolute',
+                            top: '4px',
+                            left: '6px',
+                            fontSize: '9px',
+                            background: 'rgba(236, 72, 153, 0.25)',
+                            color: '#f472b6',
+                            border: '1px solid rgba(236, 72, 153, 0.4)',
+                            borderRadius: '4px',
+                            padding: '1px 4px',
+                            fontWeight: 700,
+                          }}>
+                            외부 등록
+                          </span>
+                        )}
+                        <img src={item.src} alt={item.name} style={{ width: '85px', height: 'auto', display: 'block', maxHeight: '50px', objectFit: 'contain' }} />
+                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '8px', fontWeight: 600, textAlign: 'center' }}>
+                          {item.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Navigation Controls */}
           <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
