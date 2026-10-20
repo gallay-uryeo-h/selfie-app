@@ -9,6 +9,7 @@ import {
 } from '../utils/customStickers';
 import { STICKER_CATEGORIES } from '../constants/stickers';
 import { sound } from '../utils/soundEffects';
+import { createTextNukkiSvg } from '../utils/textStickerGenerator';
 
 const GRADIENT_PRESETS = [
   { id: 'blue', label: '스카이 블루', start: '#2563eb', end: '#38bdf8' },
@@ -120,7 +121,7 @@ export default function SettingsModal({
     alert('✨ 샘플 외부 스티커 3종(곰돌이 마스코트, 엠블럼, 클로버)이 등록되었습니다!');
   };
 
-  // 다이컷 텍스트 스티커 직접 디자인 및 등록
+  // 다이컷 텍스트 누끼 스티커 직접 디자인 및 등록 (배경 박스 일체 없음)
   const handleCreateTextSticker = (e) => {
     e.preventDefault();
     if (!customText.trim()) {
@@ -128,33 +129,23 @@ export default function SettingsModal({
       return;
     }
 
-    const encText = encodeURIComponent(customText.trim());
-    const encEmoji = customEmoji ? `${customEmoji} ` : '';
-    const gStart = encodeURIComponent(selectedGradient.start);
-    const gEnd = encodeURIComponent(selectedGradient.end);
-
-    const svg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="130" height="38" viewBox="0 0 130 38">
-      <defs>
-        <filter id="nukki" x="-15%" y="-15%" width="130%" height="130%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="%23000000" flood-opacity="0.3"/>
-        </filter>
-        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="${gStart}"/>
-          <stop offset="100%" stop-color="${gEnd}"/>
-        </linearGradient>
-      </defs>
-      <rect x="3" y="3" width="124" height="32" rx="16" fill="url(%23grad)" stroke="%23ffffff" stroke-width="2.5" filter="url(%23nukki)"/>
-      <text x="65" y="20" fill="%23ffffff" font-family="'Pretendard', sans-serif" font-weight="900" font-size="12" text-anchor="middle" dominant-baseline="central">
-        ${encEmoji}${encText}
-      </text>
-    </svg>`;
+    const cleanText = customText.trim();
+    const cleanEmoji = customEmoji.trim();
+    const svg = createTextNukkiSvg({
+      text: cleanText,
+      emoji: cleanEmoji,
+      gradientStart: selectedGradient.start,
+      gradientEnd: selectedGradient.end,
+      strokeWidth: 9,
+      fontSize: 26,
+    });
 
     const newSticker = {
       id: 'custom_txt_' + Date.now(),
-      name: customText.trim(),
+      name: (cleanEmoji ? `${cleanEmoji} ` : '') + cleanText,
       category: customCategory,
       src: svg,
-      defaultWidth: 95,
+      defaultWidth: Math.max(90, Math.min(180, (cleanText.length + (cleanEmoji ? 2 : 0)) * 16 + 40)),
       isExternal: true,
       createdAt: new Date().toISOString(),
     };
@@ -163,7 +154,8 @@ export default function SettingsModal({
     setCustomStickers(updated);
     sound.playSuccess();
     setCustomText('');
-    alert(`🎨 '${newSticker.name}' 누끼 타이포 스티커가 제작 및 등록되었습니다!`);
+    setCustomEmoji('');
+    alert(`🎨 '${newSticker.name}' 누끼 텍스트 스티커가 제작 및 등록되었습니다!`);
   };
 
   // 스티커 단건 삭제
@@ -681,14 +673,60 @@ export default function SettingsModal({
                       </select>
                     </div>
 
+                    {/* Live Cut-out Preview Box */}
+                    <div style={{
+                      borderRadius: '14px',
+                      background: 'rgba(0,0,0,0.25)',
+                      border: '1px dashed rgba(255,255,255,0.2)',
+                      padding: '14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                        ✂️ 실시간 누끼(배경 박스 없는 투명 다이컷) 미리보기
+                      </div>
+                      <div style={{
+                        padding: '12px 18px',
+                        borderRadius: '10px',
+                        background: 'repeating-conic-gradient(#334155 0% 25%, #1e293b 0% 50%) 50% / 14px 14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: '60px',
+                        width: '100%',
+                      }}>
+                        {customText.trim() ? (
+                          <img
+                            src={createTextNukkiSvg({
+                              text: customText.trim(),
+                              emoji: customEmoji.trim(),
+                              gradientStart: selectedGradient.start,
+                              gradientEnd: selectedGradient.end,
+                              strokeWidth: 9,
+                              fontSize: 26,
+                            })}
+                            alt="스티커 미리보기"
+                            style={{ maxHeight: '52px', objectFit: 'contain' }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+                            문구를 입력하면 배경 사각형 없는 순수 누끼 텍스트가 표시됩니다
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
                     <button
                       type="submit"
                       disabled={!customText.trim()}
                       className="btn btn-primary"
-                      style={{ padding: '12px', fontSize: '14px', marginTop: '6px', opacity: !customText.trim() ? 0.5 : 1 }}
+                      style={{ padding: '12px', fontSize: '14px', marginTop: '4px', opacity: !customText.trim() ? 0.5 : 1 }}
                     >
                       <PlusCircle size={16} />
-                      <span>다이컷 타이포 스티커 생성 및 등록</span>
+                      <span>누끼 텍스트 스티커 등록</span>
                     </button>
                   </form>
                 </div>

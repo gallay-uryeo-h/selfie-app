@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { STICKER_CATEGORIES, STICKER_DATA } from '../constants/stickers';
 import { sound } from '../utils/soundEffects';
+import { createTextNukkiSvg } from '../utils/textStickerGenerator';
 import { 
   Trash2, ArrowUp, ArrowDown, Type, Sparkles, Clock, 
   RotateCw, RotateCcw, ZoomIn, ZoomOut, ArrowRight, ArrowLeft, RefreshCw,
@@ -94,19 +95,14 @@ export default function Step3StickerEditor({
 
     sound.playPop();
     const cleanText = customText.trim();
-    const textSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="135" height="40" viewBox="0 0 135 40">
-      <defs>
-        <filter id="nukkiShadow" x="-15%" y="-15%" width="130%" height="130%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="%23000000" flood-opacity="0.3"/>
-        </filter>
-        <linearGradient id="customGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="%23ec4899"/>
-          <stop offset="100%" stop-color="%238b5cf6"/>
-        </linearGradient>
-      </defs>
-      <rect x="3" y="3" width="129" height="34" rx="17" fill="url(%23customGrad)" stroke="%23ffffff" stroke-width="2.5" filter="url(%23nukkiShadow)"/>
-      <text x="67" y="21" fill="%23ffffff" font-family="'Pretendard', sans-serif" font-weight="900" font-size="12" text-anchor="middle" dominant-baseline="central">✨ ${encodeURIComponent(cleanText)}</text>
-    </svg>`;
+    const textSvg = createTextNukkiSvg({
+      text: cleanText,
+      emoji: '✨',
+      gradientStart: '#ec4899',
+      gradientEnd: '#8b5cf6',
+      strokeWidth: 8,
+      fontSize: 24,
+    });
 
     const newSticker = {
       instanceId: 'stk_' + Date.now(),
@@ -117,7 +113,7 @@ export default function Step3StickerEditor({
       y: 220,
       scale: 1,
       rotation: 0,
-      width: 100,
+      width: Math.max(85, Math.min(180, cleanText.length * 18 + 50)),
     };
 
     setStickers([...stickers, newSticker]);
