@@ -148,9 +148,9 @@ export default function Step4PrintExport({ capturedPhotos, selectedTheme, select
             ctx.save();
             ctx.translate(s.x * scaleX, s.y * scaleY);
             ctx.rotate((s.rotation * Math.PI) / 180);
-            ctx.scale(s.scale * scaleX, s.scale * scaleY);
+            ctx.scale(s.scale * scaleX, s.scale * scaleX);
             const w = s.width;
-            const h = img.naturalHeight > 0 ? (img.naturalHeight / img.naturalWidth) * w : w * 0.3;
+            const h = img.naturalHeight > 0 && img.naturalWidth > 0 ? (img.naturalHeight / img.naturalWidth) * w : w * 0.5;
             ctx.drawImage(img, -w / 2, -h / 2, w, h);
             ctx.restore();
             resolve();

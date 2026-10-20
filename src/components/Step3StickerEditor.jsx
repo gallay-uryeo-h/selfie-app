@@ -3,7 +3,7 @@ import { STICKER_CATEGORIES, STICKER_DATA } from '../constants/stickers';
 import { sound } from '../utils/soundEffects';
 import { 
   Trash2, ArrowUp, ArrowDown, Type, Sparkles, Clock, 
-  RotateCw, ZoomIn, ZoomOut, ArrowRight, ArrowLeft 
+  RotateCw, RotateCcw, ZoomIn, ZoomOut, ArrowRight, ArrowLeft, RefreshCw
 } from 'lucide-react';
 
 export default function Step3StickerEditor({
@@ -16,7 +16,7 @@ export default function Step3StickerEditor({
   onNext,
   onPrev,
 }) {
-  const [activeCategory, setActiveCategory] = useState('subject');
+  const [activeCategory, setActiveCategory] = useState('deco'); // 데코/소품 누끼 스티커 기본 표시
   const [selectedStickerId, setSelectedStickerId] = useState(null);
   const [customText, setCustomText] = useState('');
   const [timeLeft, setTimeLeft] = useState(90); // 90초 제한시간 타이머
@@ -49,16 +49,16 @@ export default function Step3StickerEditor({
     return () => clearInterval(timer);
   }, []); // intentionally empty — uses onNextRef
 
-  // 스티커 추가
+  // 스티커 추가 (적정 기본 크기로 사진을 가리지 않게 배치)
   const handleAddSticker = (item) => {
-    if (stickers.length >= 12) {
-      alert('더 깔끔한 사진 출력을 위해 스티커는 최대 12개까지 부착할 수 있습니다!');
+    if (stickers.length >= 14) {
+      alert('더 깔끔한 사진 출력을 위해 스티커는 최대 14개까지 부착할 수 있습니다!');
       return;
     }
     sound.playPop();
 
-    // 캔버스 중앙 근처에 랜덤 오프셋으로 배치
-    const offset = (Math.random() - 0.5) * 60;
+    // 캔버스 중앙 근처에 자연스러운 위치로 배치
+    const offset = (Math.random() - 0.5) * 50;
     const newSticker = {
       instanceId: 'stk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       id: item.id,
@@ -67,48 +67,49 @@ export default function Step3StickerEditor({
       x: 180 + offset,
       y: 220 + offset,
       scale: 1,
-      rotation: (Math.random() - 0.5) * 16, // 약간의 자연스러운 각도
-      width: item.defaultWidth || 150,
+      rotation: Math.round((Math.random() - 0.5) * 12),
+      width: item.defaultWidth || 90,
     };
 
     setStickers([...stickers, newSticker]);
     setSelectedStickerId(newSticker.instanceId);
   };
 
-  // 커스텀 텍스트 스티커 추가
+  // 커스텀 텍스트 스티커 추가 (누끼 다이컷 스타일)
   const handleAddCustomTextSticker = (e) => {
     e.preventDefault();
     if (!customText.trim()) return;
-    if (stickers.length >= 12) {
-      alert('스티커는 최대 12개까지 추가 가능합니다.');
+    if (stickers.length >= 14) {
+      alert('스티커는 최대 14개까지 추가 가능합니다.');
       return;
     }
 
     sound.playPop();
-    const textSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="56" viewBox="0 0 200 56">
+    const cleanText = customText.trim();
+    const textSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="135" height="40" viewBox="0 0 135 40">
       <defs>
-        <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
-          <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="%23000000" flood-opacity="0.3"/>
+        <filter id="nukkiShadow" x="-15%" y="-15%" width="130%" height="130%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="%23000000" flood-opacity="0.3"/>
         </filter>
-        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="customGrad" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stop-color="%23ec4899"/>
           <stop offset="100%" stop-color="%238b5cf6"/>
         </linearGradient>
       </defs>
-      <rect x="4" y="4" width="192" height="48" rx="24" fill="url(%23grad)" stroke="%23ffffff" stroke-width="2.5" filter="url(%23glow)"/>
-      <text x="100" y="30" fill="%23ffffff" font-family="'Pretendard', sans-serif" font-weight="800" font-size="14.5" text-anchor="middle" dominant-baseline="central">✨ ${encodeURIComponent(customText.trim())}</text>
+      <rect x="3" y="3" width="129" height="34" rx="17" fill="url(%23customGrad)" stroke="%23ffffff" stroke-width="2.5" filter="url(%23nukkiShadow)"/>
+      <text x="67" y="21" fill="%23ffffff" font-family="'Pretendard', sans-serif" font-weight="900" font-size="12" text-anchor="middle" dominant-baseline="central">✨ ${encodeURIComponent(cleanText)}</text>
     </svg>`;
 
     const newSticker = {
       instanceId: 'stk_' + Date.now(),
       id: 'custom_text',
-      name: customText.trim(),
+      name: cleanText,
       src: textSvg,
-      x: 170,
-      y: 200,
+      x: 180,
+      y: 220,
       scale: 1,
       rotation: 0,
-      width: 170,
+      width: 100,
     };
 
     setStickers([...stickers, newSticker]);
@@ -147,7 +148,42 @@ export default function Step3StickerEditor({
     setStickers(newArr);
   };
 
-  // 포인터 이벤트 기반 드래그 및 회전/스케일 제어
+  // 1-Click 미세조절 버튼 (확대/축소/회전/리셋)
+  const handleScaleStep = (delta) => {
+    if (!selectedStickerId) return;
+    sound.playPop();
+    setStickers(prev => prev.map(s => {
+      if (s.instanceId === selectedStickerId) {
+        const nextScale = Math.max(0.35, Math.min(2.5, +(s.scale + delta).toFixed(2)));
+        return { ...s, scale: nextScale };
+      }
+      return s;
+    }));
+  };
+
+  const handleRotateStep = (deg) => {
+    if (!selectedStickerId) return;
+    sound.playPop();
+    setStickers(prev => prev.map(s => {
+      if (s.instanceId === selectedStickerId) {
+        return { ...s, rotation: (s.rotation + deg) % 360 };
+      }
+      return s;
+    }));
+  };
+
+  const handleResetTransform = () => {
+    if (!selectedStickerId) return;
+    sound.playPop();
+    setStickers(prev => prev.map(s => {
+      if (s.instanceId === selectedStickerId) {
+        return { ...s, scale: 1, rotation: 0 };
+      }
+      return s;
+    }));
+  };
+
+  // 포인터 이벤트 기반 드래그 제어
   const handlePointerDownSticker = (e, sticker) => {
     e.stopPropagation();
     setSelectedStickerId(sticker.instanceId);
@@ -167,8 +203,11 @@ export default function Step3StickerEditor({
     };
   };
 
+  // 회전 및 스케일 핸들 터치/클릭
   const handlePointerDownHandle = (e, type, sticker) => {
     e.stopPropagation();
+    if (e.cancelable) e.preventDefault();
+    isDraggingRef.current = false;
     isTransformingRef.current = type; // 'scale' or 'rotate'
 
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -200,6 +239,7 @@ export default function Step3StickerEditor({
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
       if (isDraggingRef.current) {
+        if (e.touches && e.cancelable) e.preventDefault();
         const dx = clientX - dragStartRef.current.x;
         const dy = clientY - dragStartRef.current.y;
 
@@ -207,13 +247,14 @@ export default function Step3StickerEditor({
           if (s.instanceId === selectedStickerId) {
             return {
               ...s,
-              x: Math.max(20, Math.min(340, dragStartRef.current.stickerX + dx)),
-              y: Math.max(20, Math.min(480, dragStartRef.current.stickerY + dy)),
+              x: Math.max(0, Math.min(360, dragStartRef.current.stickerX + dx)),
+              y: Math.max(0, Math.min(520, dragStartRef.current.stickerY + dy)),
             };
           }
           return s;
         }));
       } else if (isTransformingRef.current === 'scale') {
+        if (e.touches && e.cancelable) e.preventDefault();
         const rect = canvasContainerRef.current.getBoundingClientRect();
         const currentSticker = stickers.find(s => s.instanceId === selectedStickerId);
         if (!currentSticker) return;
@@ -223,7 +264,7 @@ export default function Step3StickerEditor({
         const currentDist = Math.hypot(clientX - centerX, clientY - centerY);
 
         const ratio = currentDist / (dragStartRef.current.initialDist || 1);
-        const newScale = Math.max(0.5, Math.min(2.2, dragStartRef.current.scale * ratio));
+        const newScale = Math.max(0.35, Math.min(2.5, +(dragStartRef.current.scale * ratio).toFixed(2)));
 
         setStickers(prev => prev.map(s => {
           if (s.instanceId === selectedStickerId) {
@@ -232,6 +273,7 @@ export default function Step3StickerEditor({
           return s;
         }));
       } else if (isTransformingRef.current === 'rotate') {
+        if (e.touches && e.cancelable) e.preventDefault();
         const rect = canvasContainerRef.current.getBoundingClientRect();
         const currentSticker = stickers.find(s => s.instanceId === selectedStickerId);
         if (!currentSticker) return;
@@ -243,7 +285,7 @@ export default function Step3StickerEditor({
 
         setStickers(prev => prev.map(s => {
           if (s.instanceId === selectedStickerId) {
-            return { ...s, rotation: dragStartRef.current.rotation + deltaAngle };
+            return { ...s, rotation: Math.round((dragStartRef.current.rotation + deltaAngle) % 360) };
           }
           return s;
         }));
@@ -276,10 +318,10 @@ export default function Step3StickerEditor({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '26px', fontWeight: 800, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🎨</span> 세특 & 영어과목 스티커 꾸미기
+            <span>🎀</span> 누끼 스티커 & 소품 꾸미기
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
-            스티커를 터치하여 원하는 위치로 옮기고, 크기 조절 및 회전해보세요!
+            사진을 가리지 않는 깔끔한 투명 누끼 스티커를 얼굴과 사진 위에 자유롭게 붙여보세요!
           </p>
         </div>
 
@@ -297,7 +339,7 @@ export default function Step3StickerEditor({
           fontSize: '14px'
         }}>
           <Clock size={16} color={timeLeft <= 15 ? '#ef4444' : '#818cf8'} />
-          <span>남은 꾸미기 시간: {timeLeft}초</span>
+          <span>남은 시간: {timeLeft}초</span>
         </div>
       </div>
 
@@ -391,8 +433,8 @@ export default function Step3StickerEditor({
                     <div style={{
                       position: 'relative',
                       border: isSelected ? '2px dashed #ec4899' : '2px solid transparent',
-                      padding: '4px',
-                      borderRadius: '8px',
+                      padding: '2px',
+                      borderRadius: '6px',
                     }}>
                       <img
                         src={s.src}
@@ -411,38 +453,39 @@ export default function Step3StickerEditor({
                           <div
                             onMouseDown={(e) => handlePointerDownHandle(e, 'rotate', s)}
                             onTouchStart={(e) => handlePointerDownHandle(e, 'rotate', s)}
-                            title="회전 핸들"
+                            title="회전 드래그"
                             style={{
                               position: 'absolute',
                               top: '-14px',
                               right: '-14px',
-                              width: '26px',
-                              height: '26px',
+                              width: '28px',
+                              height: '28px',
                               borderRadius: '50%',
                               background: '#6366f1',
                               color: '#fff',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              cursor: 'crosshair',
-                              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                              cursor: 'grab',
+                              boxShadow: '0 3px 8px rgba(0,0,0,0.4)',
                               zIndex: 40,
+                              touchAction: 'none',
                             }}
                           >
-                            <RotateCw size={13} />
+                            <RotateCw size={14} />
                           </div>
 
                           {/* Scale Handle (Bottom Right) */}
                           <div
                             onMouseDown={(e) => handlePointerDownHandle(e, 'scale', s)}
                             onTouchStart={(e) => handlePointerDownHandle(e, 'scale', s)}
-                            title="크기 조절 핸들"
+                            title="크기 조절 드래그"
                             style={{
                               position: 'absolute',
                               bottom: '-14px',
                               right: '-14px',
-                              width: '26px',
-                              height: '26px',
+                              width: '28px',
+                              height: '28px',
                               borderRadius: '50%',
                               background: '#ec4899',
                               color: '#fff',
@@ -450,11 +493,12 @@ export default function Step3StickerEditor({
                               alignItems: 'center',
                               justifyContent: 'center',
                               cursor: 'nwse-resize',
-                              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                              boxShadow: '0 3px 8px rgba(0,0,0,0.4)',
                               zIndex: 40,
+                              touchAction: 'none',
                             }}
                           >
-                            <ZoomIn size={13} />
+                            <ZoomIn size={14} />
                           </div>
 
                           {/* Delete Button (Top Left) */}
@@ -468,8 +512,8 @@ export default function Step3StickerEditor({
                               position: 'absolute',
                               top: '-14px',
                               left: '-14px',
-                              width: '26px',
-                              height: '26px',
+                              width: '28px',
+                              height: '28px',
                               borderRadius: '50%',
                               background: '#ef4444',
                               color: '#fff',
@@ -477,11 +521,40 @@ export default function Step3StickerEditor({
                               alignItems: 'center',
                               justifyContent: 'center',
                               cursor: 'pointer',
-                              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                              boxShadow: '0 3px 8px rgba(0,0,0,0.4)',
                               zIndex: 40,
+                              fontWeight: 900,
+                              fontSize: '13px',
                             }}
                           >
                             ✕
+                          </div>
+
+                          {/* Reset Button (Bottom Left) */}
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleResetTransform();
+                            }}
+                            title="원래 크기/각도로 리셋"
+                            style={{
+                              position: 'absolute',
+                              bottom: '-14px',
+                              left: '-14px',
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '50%',
+                              background: '#475569',
+                              color: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              boxShadow: '0 3px 8px rgba(0,0,0,0.4)',
+                              zIndex: 40,
+                            }}
+                          >
+                            <RefreshCw size={13} />
                           </div>
                         </>
                       )}
@@ -491,33 +564,94 @@ export default function Step3StickerEditor({
               })}
             </div>
 
-            {/* Sticker Control Bar */}
-            <div style={{ marginTop: '16px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
-              <button
-                onClick={handleBringForward}
-                disabled={!selectedSticker}
-                className="btn btn-secondary"
-                style={{ padding: '8px 12px', fontSize: '12px', opacity: selectedSticker ? 1 : 0.4 }}
-              >
-                <ArrowUp size={14} /> 맨 위로
-              </button>
-              <button
-                onClick={handleSendBackward}
-                disabled={!selectedSticker}
-                className="btn btn-secondary"
-                style={{ padding: '8px 12px', fontSize: '12px', opacity: selectedSticker ? 1 : 0.4 }}
-              >
-                <ArrowDown size={14} /> 맨 아래로
-              </button>
-              <button
-                onClick={handleDeleteSelected}
-                disabled={!selectedSticker}
-                className="btn btn-secondary"
-                style={{ padding: '8px 12px', fontSize: '12px', color: selectedSticker ? '#ef4444' : 'inherit', opacity: selectedSticker ? 1 : 0.4 }}
-              >
-                <Trash2 size={14} /> 스티커 삭제
-              </button>
-            </div>
+            {/* Selected Sticker Quick Control Toolbar */}
+            {selectedSticker ? (
+              <div style={{
+                marginTop: '14px',
+                padding: '10px 14px',
+                borderRadius: '12px',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: '#c7d2fe', fontWeight: 700 }}>
+                  <span>선택된 스티커: {selectedSticker.name}</span>
+                  <span style={{ fontSize: '11px', opacity: 0.8 }}>배율: {Math.round(selectedSticker.scale * 100)}% | 회전: {selectedSticker.rotation}°</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {/* Scale Down */}
+                  <button
+                    onClick={() => handleScaleStep(-0.15)}
+                    className="btn btn-secondary"
+                    style={{ padding: '6px 10px', fontSize: '12px' }}
+                    title="15% 축소"
+                  >
+                    <ZoomOut size={13} /> 축소
+                  </button>
+                  {/* Scale Up */}
+                  <button
+                    onClick={() => handleScaleStep(0.15)}
+                    className="btn btn-secondary"
+                    style={{ padding: '6px 10px', fontSize: '12px' }}
+                    title="15% 확대"
+                  >
+                    <ZoomIn size={13} /> 확대
+                  </button>
+                  {/* Rotate Left */}
+                  <button
+                    onClick={() => handleRotateStep(-15)}
+                    className="btn btn-secondary"
+                    style={{ padding: '6px 10px', fontSize: '12px' }}
+                    title="15도 좌회전"
+                  >
+                    <RotateCcw size={13} /> -15°
+                  </button>
+                  {/* Rotate Right */}
+                  <button
+                    onClick={() => handleRotateStep(15)}
+                    className="btn btn-secondary"
+                    style={{ padding: '6px 10px', fontSize: '12px' }}
+                    title="15도 우회전"
+                  >
+                    <RotateCw size={13} /> +15°
+                  </button>
+                  {/* Layer Up */}
+                  <button
+                    onClick={handleBringForward}
+                    className="btn btn-secondary"
+                    style={{ padding: '6px 10px', fontSize: '12px' }}
+                    title="맨 앞으로"
+                  >
+                    <ArrowUp size={13} /> 맨앞
+                  </button>
+                  {/* Layer Down */}
+                  <button
+                    onClick={handleSendBackward}
+                    className="btn btn-secondary"
+                    style={{ padding: '6px 10px', fontSize: '12px' }}
+                    title="맨 뒤로"
+                  >
+                    <ArrowDown size={13} /> 맨뒤
+                  </button>
+                  {/* Delete */}
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="btn btn-secondary"
+                    style={{ padding: '6px 10px', fontSize: '12px', color: '#ef4444' }}
+                    title="삭제"
+                  >
+                    <Trash2 size={13} /> 삭제
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--text-secondary)', padding: '6px' }}>
+                💡 스티커를 클릭하면 확대/축소, 회전, 순서 조절 버튼이 나타납니다.
+              </div>
+            )}
           </div>
         </div>
 
@@ -528,7 +662,7 @@ export default function Step3StickerEditor({
           <div className="glass-panel" style={{ padding: '16px' }}>
             <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Type size={16} color="#ec4899" />
-              <span>직접 입력 세특 / 진로 문구 스티커</span>
+              <span>직접 입력 세특 / 진로 문구 누끼 스티커</span>
             </div>
             <form onSubmit={handleAddCustomTextSticker} style={{ display: 'flex', gap: '8px' }}>
               <input
@@ -609,12 +743,13 @@ export default function Step3StickerEditor({
                     justifyContent: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
+                    minHeight: '85px',
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'}
                 >
-                  <img src={item.src} alt={item.name} style={{ width: '110px', height: 'auto', display: 'block' }} />
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '8px', fontWeight: 600 }}>
+                  <img src={item.src} alt={item.name} style={{ width: '85px', height: 'auto', display: 'block', maxHeight: '50px', objectFit: 'contain' }} />
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '8px', fontWeight: 600, textAlign: 'center' }}>
                     {item.name}
                   </span>
                 </div>
